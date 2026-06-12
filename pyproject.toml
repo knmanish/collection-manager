@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "collect"
-version = "0.1.0"
+version = "0.2.0"
 description = "CLI and web app to manage a personal collection"
 requires-python = ">=3.10"
 dependencies = [
@@ -13,10 +13,10 @@ dependencies = [
 
 [project.scripts]
 collect = "collect.cli:main"
-collect-web = "collect.web:main"
+collect-web = "collect.web.app:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-collect = ["templates/*.html"]
+"collect.web" = ["templates/*.html"]
