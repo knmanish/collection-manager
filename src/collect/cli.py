@@ -66,6 +66,26 @@ def build_parser(categories: list[str]) -> argparse.ArgumentParser:
     p_cur = sub.add_parser("currency", help="Get or set the display currency")
     p_cur.add_argument("value", nargs="?", choices=["USD", "EUR", "INR"])
 
+    p_wish = sub.add_parser("wishlist", help="Manage the wishlist")
+    wish_sub = p_wish.add_subparsers(dest="wish_command", required=True)
+    wish_sub.add_parser("list", help="List wishlist items")
+    w_add = wish_sub.add_parser("add", help="Add a wishlist item")
+    w_add.add_argument("name")
+    w_add.add_argument("--category", "-c", required=True)
+    w_add.add_argument("--brand", "-b", default="")
+    w_add.add_argument("--est-value", "-v", type=float, default=0.0)
+    w_add.add_argument("--currency", default="USD", choices=["USD", "EUR", "INR"])
+    w_add.add_argument("--priority", "-p", default="Medium",
+                       choices=["High", "Medium", "Low"])
+    w_add.add_argument("--source-url", default="")
+    w_add.add_argument("--notes", "-n", default="")
+    w_remove = wish_sub.add_parser("remove", help="Remove a wishlist item by id or name")
+    w_remove.add_argument("identifier")
+    w_promote = wish_sub.add_parser("promote", help="Move a wishlist item into the collection")
+    w_promote.add_argument("identifier")
+    w_promote.add_argument("--acquired", "-a", default="", metavar="YYYY-MM-DD")
+    w_promote.add_argument("--value", "-v", type=float)
+
     return parser
 
 
@@ -177,6 +197,9 @@ def _dispatch(service: CollectionService, args: argparse.Namespace) -> None:
         else:
             print(service.get_display_currency())
 
+    elif args.command == "wishlist":
+        _dispatch_wishlist(service, args)
+
 
 def _dispatch_category(service: CollectionService, args: argparse.Namespace) -> None:
     if args.cat_command == "list":
@@ -191,6 +214,58 @@ def _dispatch_category(service: CollectionService, args: argparse.Namespace) -> 
     elif args.cat_command == "remove":
         service.remove_category(args.name, force=args.force)
         print(f"Removed category: {args.name}")
+
+
+def _resolve_wishlist(service: CollectionService, identifier: str):
+    try:
+        return service.get_wishlist_item(identifier)
+    except ItemNotFound:
+        pass
+    matches = [w for w in service.list_wishlist()
+               if w.name.lower() == identifier.lower()]
+    if not matches:
+        raise ItemNotFound(f"No wishlist item with id or name {identifier!r}.")
+    if len(matches) > 1:
+        ids = ", ".join(m.id for m in matches)
+        raise CollectError(f"{len(matches)} wishlist items named {identifier!r}; "
+                           f"use an id: {ids}")
+    return matches[0]
+
+
+def _dispatch_wishlist(service: CollectionService, args: argparse.Namespace) -> None:
+    if args.wish_command == "list":
+        items = service.list_wishlist()
+        if not items:
+            print("Wishlist is empty.")
+            return
+        rows = [
+            {"id": w.id[:8], "name": w.name, "category": w.category,
+             "brand": w.brand, "priority": w.priority,
+             "est": f"{w.est_value:.2f} {w.currency}", "notes": w.notes}
+            for w in items
+        ]
+        cols = ["id", "name", "category", "brand", "priority", "est", "notes"]
+        widths = {c: max(len(c), *(len(str(r[c])) for r in rows)) for c in cols}
+        print("  ".join(c.upper().ljust(widths[c]) for c in cols))
+        print("-" * (sum(widths.values()) + 2 * (len(cols) - 1)))
+        for r in rows:
+            print("  ".join(str(r[c]).ljust(widths[c]) for c in cols))
+    elif args.wish_command == "add":
+        w = service.add_wishlist_item(
+            name=args.name, category=args.category, brand=args.brand,
+            est_value=args.est_value, currency=args.currency,
+            priority=args.priority, source_url=args.source_url, notes=args.notes,
+        )
+        print(f"Added to wishlist: {w.name} ({w.priority})  id={w.id[:8]}")
+    elif args.wish_command == "remove":
+        w = _resolve_wishlist(service, args.identifier)
+        service.remove_wishlist_item(w.id)
+        print(f"Removed from wishlist: {w.name}")
+    elif args.wish_command == "promote":
+        w = _resolve_wishlist(service, args.identifier)
+        item = service.promote_wishlist_item(
+            w.id, acquired=args.acquired, value=args.value)
+        print(f"Promoted to collection: {item.name}  id={item.id[:8]}")
 
 
 if __name__ == "__main__":

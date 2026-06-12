@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}collect — manage{% endblock %}
+{% block body %}
+<h1>Manage collection</h1>
+<p class="sub">Add, edit and remove pieces, and curate your categories.</p>
+<div class="rule"></div>
+
+<div class="card" style="padding:14px 16px;margin-bottom:18px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+  <a class="chip-btn" href="{{ url_for('manage', q=query or None) }}"
+     style="border:1px solid var(--gold);padding:5px 14px;border-radius:999px;font-family:var(--display);text-decoration:none;
+     {{ 'background:var(--accent);color:var(--surface)' if not active_category else 'color:var(--muted)' }}">All</a>
+  {% for c in categories %}
+  <a class="chip-btn" href="{{ url_for('manage', category=c, q=query or None) }}"
+     style="border:1px solid var(--gold);padding:5px 14px;border-radius:999px;font-family:var(--display);text-decoration:none;
+     {{ 'background:var(--accent);color:var(--surface)' if active_category==c else 'color:var(--muted)' }}">{{ c }}</a>
+  {% endfor %}
+  <form method="get" action="{{ url_for('manage') }}" style="margin-left:auto;display:flex;gap:8px;width:auto">
+    {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
+    <input type="search" name="q" value="{{ query }}" placeholder="Search name, brand, notes…" style="width:240px">
+    <button class="btn sm" type="submit">Search</button>
+  </form>
+</div>
+
+<div class="card" style="overflow:hidden;margin-bottom:30px">
+  {% if items %}
+  <table>
+    <thead><tr><th>Name</th><th>Category</th><th>Brand</th><th>Acquired</th>
+      <th class="right">Value ({{ display_currency }})</th><th></th></tr></thead>
+    <tbody>
+      {% for it in items %}
+      <tr>
+        <td><div style="font-family:var(--display);font-weight:600;font-size:17px">{{ it.name }}</div>
+          {% if it.notes %}<div class="tiny muted">{{ it.notes }}</div>{% endif %}</td>
+        <td><span class="pill">{{ it.category }}</span></td>
+        <td>{{ it.brand }}</td>
+        <td>{{ it.acquired }}</td>
+        <td class="right"><div class="money">{{ it.converted }}</div>
+          {% if not it.same_currency %}<div class="tiny muted">{{ it.original }}</div>{% endif %}</td>
+        <td class="right" style="white-space:nowrap">
+          <a class="btn sm ghost" href="{{ url_for('edit', item_id=it.id) }}">Edit</a>
+          <form method="post" action="{{ url_for('remove', item_id=it.id) }}" style="display:inline;width:auto"
+                onsubmit="return confirm('Remove {{ it.name }}?')">
+            <input type="hidden" name="csrf" value="{{ csrf_token }}">
+            <input type="hidden" name="next" value="{{ request.full_path }}">
+            <button class="btn sm danger" type="submit">Remove</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<div style="padding:40px;text-align:center" class="muted"><span style="font-style:italic">No pieces yet — add one below.</span></div>{% endif %}
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start">
+  <div class="card" style="padding:22px 24px">
+    <h2 style="font-size:19px;margin:0 0 4px">Add a piece</h2>
+    <p class="tiny muted" style="margin:0 0 16px;font-style:italic">Leave the image blank to auto-fetch a picture from the web.</p>
+    <form method="post" action="{{ url_for('add') }}">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">
+        <div><label>Name</label><input name="name" required></div>
+        <div><label>Category</label><select name="category">{% for c in categories %}<option>{{ c }}</option>{% endfor %}</select></div>
+        <div><label>Brand</label><input name="brand"></div>
+        <div><label>Acquired</label><input name="acquired" type="date"></div>
+        <div><label>Value</label><input name="value" type="number" step="0.01" min="0" value="0"></div>
+        <div><label>Currency</label><select name="currency">{% for c in supported_currencies %}<option {{ 'selected' if c==display_currency }}>{{ c }}</option>{% endfor %}</select></div>
+        <div style="grid-column:1/-1"><label>Image URL (optional)</label><input name="image_url" placeholder="https://… or leave blank to auto-fetch"></div>
+        <div style="grid-column:1/-1"><label>Notes</label><textarea name="notes" rows="2"></textarea></div>
+      </div>
+      <div style="margin-top:16px"><button class="btn" type="submit">Add to collection</button></div>
+    </form>
+  </div>
+
+  <div class="card" style="padding:22px 24px">
+    <h2 style="font-size:19px;margin:0 0 16px">Categories</h2>
+    {% for cat, n in counts.items() %}
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:9px">
+      <form method="post" action="{{ url_for('category_rename') }}" style="display:flex;gap:6px;flex:1;width:auto">
+        <input type="hidden" name="csrf" value="{{ csrf_token }}">
+        <input type="hidden" name="old" value="{{ cat }}">
+        <input name="new" value="{{ cat }}">
+        <button class="btn sm ghost" type="submit">Save</button>
+      </form>
+      <span class="tiny muted" style="width:24px;text-align:right">{{ n }}</span>
+      <form method="post" action="{{ url_for('category_remove') }}" style="width:auto"
+            onsubmit="return confirm('Remove category {{ cat }}?{% if n %} {{ n }} item(s) keep the old label.{% endif %}')">
+        <input type="hidden" name="csrf" value="{{ csrf_token }}">
+        <input type="hidden" name="name" value="{{ cat }}">
+        {% if n %}<input type="hidden" name="force" value="1">{% endif %}
+        <button class="btn sm danger" type="submit">✕</button>
+      </form>
+    </div>
+    {% endfor %}
+    <form method="post" action="{{ url_for('category_add') }}" style="margin-top:16px;display:flex;gap:8px">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}">
+      <input name="name" placeholder="New category" required>
+      <button class="btn" type="submit">Add</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

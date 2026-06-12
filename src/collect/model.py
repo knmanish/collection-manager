@@ -119,3 +119,85 @@ def _resolve_cents(*, value: float | None, value_cents: int | None) -> int:
         except (TypeError, ValueError):
             raise ValidationError(f"Value {value!r} is not a number.")
     return 0
+
+
+PRIORITIES = ("High", "Medium", "Low")
+
+
+@dataclass
+class WishlistItem:
+    """A collectible the user wants but doesn't own yet.
+
+    Mirrors :class:`Item` but carries an estimated target price, a buying
+    priority, and an optional source link instead of an acquired date.
+    """
+
+    name: str
+    category: str
+    brand: str = ""
+    est_value_cents: int = 0
+    currency: str = "USD"
+    priority: str = "Medium"
+    source_url: str = ""
+    notes: str = ""
+    image_url: str = ""
+    id: str = field(default_factory=_new_id)
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        name: str,
+        category: str,
+        brand: str = "",
+        est_value: float | None = None,
+        est_value_cents: int | None = None,
+        currency: str = "USD",
+        priority: str = "Medium",
+        source_url: str = "",
+        notes: str = "",
+        image_url: str = "",
+        valid_categories: list[str] | None = None,
+    ) -> "WishlistItem":
+        name = (name or "").strip()
+        if not name:
+            raise ValidationError("Name is required.")
+
+        category = (category or "").strip()
+        if valid_categories is not None and category not in valid_categories:
+            allowed = ", ".join(valid_categories) or "(none defined)"
+            raise ValidationError(f"Category {category!r} is not one of: {allowed}")
+
+        currency = (currency or "USD").strip().upper()
+        if currency not in SUPPORTED_CURRENCIES:
+            raise ValidationError(
+                f"Currency must be one of: {', '.join(SUPPORTED_CURRENCIES)}"
+            )
+
+        priority = (priority or "Medium").strip().title()
+        if priority not in PRIORITIES:
+            priority = "Medium"
+
+        return cls(
+            name=name,
+            category=category,
+            brand=(brand or "").strip(),
+            est_value_cents=_resolve_cents(value=est_value, value_cents=est_value_cents),
+            currency=currency,
+            priority=priority,
+            source_url=(source_url or "").strip(),
+            notes=(notes or "").strip(),
+            image_url=(image_url or "").strip(),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "WishlistItem":
+        known = {f for f in cls.__dataclass_fields__}
+        return cls(**{k: v for k, v in data.items() if k in known})
+
+    @property
+    def est_value(self) -> float:
+        return self.est_value_cents / 100

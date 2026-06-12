@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}collect — my collection{% endblock %}
+{% block head %}
+<style>
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px;margin-bottom:26px}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+        padding:16px 20px;border-top:3px solid var(--gold)}
+  .stat .k{font-family:var(--display);font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+  .stat .v{font-family:var(--display);font-size:27px;font-weight:700;margin-top:4px}
+  .bars{display:flex;flex-direction:column;gap:13px}
+  .bar-row{display:grid;grid-template-columns:140px 1fr auto;gap:14px;align-items:center}
+  .bar-track{background:var(--surface-2);border:1px solid var(--line);border-radius:999px;height:11px;overflow:hidden}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--gold));border-radius:999px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+        overflow:hidden;display:flex;flex-direction:column;text-decoration:none;color:inherit}
+  .tile:hover{border-color:var(--gold);text-decoration:none;box-shadow:0 4px 14px rgba(80,60,20,.08)}
+  .tile .photo{aspect-ratio:4/3;background:var(--surface-2);display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .tile .photo img{width:100%;height:100%;object-fit:cover}
+  .tile .ph{color:var(--muted);font-style:italic;font-size:14px}
+  .tile .body{padding:14px 16px;display:flex;flex-direction:column;gap:4px;flex:1}
+  .tile .nm{font-family:var(--display);font-weight:600;font-size:18px;line-height:1.2}
+  .tile .val{margin-top:auto;padding-top:10px;font-family:var(--display);font-size:18px;font-weight:600}
+  .chips{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:20px}
+  .chip-btn{border:1px solid var(--gold);background:var(--surface);color:var(--muted);
+    padding:5px 15px;border-radius:999px;font-family:var(--display);font-size:14px;cursor:pointer}
+  .chip-btn.on{background:var(--accent);color:var(--surface)}
+</style>
+{% endblock %}
+{% block body %}
+<div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px">
+  <div>
+    <h1>My collection</h1>
+    <p class="sub">{{ count }} piece(s) · valued at {{ total }} · in {{ display_currency }} · rates {{ rates_label }}</p>
+  </div>
+  {% if missing_images %}
+  <form method="post" action="{{ url_for('fetch_images') }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <input type="hidden" name="next" value="{{ url_for('index') }}">
+    <button class="btn ghost" type="submit">Fetch {{ missing_images }} missing image(s)</button>
+  </form>
+  {% endif %}
+</div>
+<div class="rule"></div>
+
+<div class="stats">
+  <div class="stat"><div class="k">Total value</div><div class="v">{{ total }}</div></div>
+  <div class="stat"><div class="k">Pieces</div><div class="v">{{ count }}</div></div>
+  <div class="stat"><div class="k">Categories</div><div class="v">{{ breakdown|length }}</div></div>
+  {% if breakdown %}<div class="stat"><div class="k">Largest holding</div><div class="v" style="font-size:21px">{{ breakdown[0].category }}</div></div>{% endif %}
+</div>
+
+{% if breakdown %}
+<div class="card" style="padding:22px 24px;margin-bottom:28px">
+  <h2 style="font-size:19px;margin:0 0 16px">Value by category</h2>
+  <div class="bars">
+    {% for b in breakdown %}
+    <div class="bar-row">
+      <div class="display" style="font-size:16px">{{ b.category }} <span class="tiny muted">({{ b.count }})</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:{{ (100 * b.cents / total_cents) if total_cents else 0 }}%"></div></div>
+      <div class="money">{{ b.total }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if items %}
+<div class="chips" id="chips">
+  <button class="chip-btn on" data-cat="*">All ({{ count }})</button>
+  {% for b in breakdown %}<button class="chip-btn" data-cat="{{ b.category }}">{{ b.category }} ({{ b.count }})</button>{% endfor %}
+</div>
+<div class="grid" id="grid">
+  {% for it in items %}
+  <a class="tile" data-cat="{{ it.category }}" href="{{ url_for('edit', item_id=it.id) }}">
+    <div class="photo">
+      {% if it.image_url %}<img src="{{ it.image_url }}" alt="{{ it.name }}" loading="lazy">
+      {% else %}<span class="ph">No image</span>{% endif %}
+    </div>
+    <div class="body">
+      <div class="nm">{{ it.name }}</div>
+      <div class="tiny muted">{{ it.brand }}{% if it.brand and it.acquired %} · {% endif %}{{ it.acquired }}</div>
+      <div><span class="pill">{{ it.category }}</span></div>
+      <div class="val">{{ it.converted }}{% if not it.same_currency %} <span class="tiny muted" style="font-weight:400">({{ it.original }})</span>{% endif %}</div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card" style="padding:50px;text-align:center"><span class="muted" style="font-style:italic">Your cabinet is empty. <a href="{{ url_for('manage') }}">Add your first piece</a>.</span></div>
+{% endif %}
+
+<script>
+  const chips=document.getElementById('chips');
+  if(chips){chips.addEventListener('click',e=>{const b=e.target.closest('.chip-btn');if(!b)return;
+    chips.querySelectorAll('.chip-btn').forEach(x=>x.classList.toggle('on',x===b));
+    const c=b.dataset.cat;
+    document.querySelectorAll('#grid .tile').forEach(t=>{t.style.display=(c==='*'||t.dataset.cat===c)?'':'none';});});}
+</script>
+{% endblock %}

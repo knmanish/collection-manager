@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}collect — edit {{ raw.name }}{% endblock %}
 {% block body %}
-<p class="sub"><a href="{{ url_for('index') }}">← Back to collection</a></p>
+<p class="sub"><a href="{{ url_for('manage') }}">← Back to manage</a></p>
 <h1>Edit item</h1>
 <p class="sub">id {{ raw.id[:8] }}</p>
 
@@ -31,7 +31,7 @@
       </div>
       <div style="margin-top:18px;display:flex;gap:10px">
         <button class="btn" type="submit">Save changes</button>
-        <a class="btn ghost" href="{{ url_for('index') }}">Cancel</a>
+        <a class="btn ghost" href="{{ url_for('manage') }}">Cancel</a>
       </div>
     </form>
   </div>

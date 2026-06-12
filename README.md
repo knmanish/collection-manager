@@ -10,10 +10,14 @@ pens, knives, or any categories you define).
 - **Multi-currency**: store each item in USD/EUR/INR and toggle the whole
   collection into any of them using **live exchange rates** (cached, with an
   offline fallback)
-- **Interactive summary page** with value-by-category breakdown and item cards,
-  including **pictures auto-fetched from the web** (with manual override)
-- Single local JSON file, written atomically; schema-versioned with automatic
-  migration from older formats
+- **Wishlist** of pieces you're after (priority, estimated price, source link),
+  with one-click "promote" into the owned collection
+- **Pictures auto-fetched from the web** for items and wishlist entries (with
+  manual override)
+- Vintage-luxury web UI (Playfair Display + EB Garamond, emerald & gold) with
+  three tabs: **My Collection** (showcase), **Manage Collection**, **Wishlist**
+- Single local JSON file, written atomically; schema-versioned (v2) with
+  automatic migration from older formats
 
 ## Install
 
@@ -37,6 +41,11 @@ collect category rename pen "writing instrument"
 collect category remove knife
 
 collect currency EUR    # set display currency; no arg prints current
+
+collect wishlist add "Rolex Submariner" -c watch -b Rolex -v 12000 -p High
+collect wishlist list
+collect wishlist promote "Rolex Submariner" -a 2026-06-12 -v 11500   # move into collection
+collect wishlist remove "Rolex Submariner"
 ```
 
 ## Web app

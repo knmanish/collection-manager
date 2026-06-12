@@ -10,7 +10,7 @@ from __future__ import annotations
 from . import images
 from .config import Settings
 from .errors import CategoryError, ValidationError
-from .model import SUPPORTED_CURRENCIES, Item
+from .model import SUPPORTED_CURRENCIES, Item, WishlistItem
 from .repository import JsonRepository, Repository
 
 
@@ -156,6 +156,78 @@ class CollectionService:
             c for c in self.settings.categories if c != name
         ]
         self.settings.save()
+
+    # ---- wishlist -------------------------------------------------------------
+
+    def list_wishlist(self, category: str | None = None) -> list[WishlistItem]:
+        items = self.repo.wishlist_all()
+        if category:
+            items = [i for i in items if i.category == category]
+        # Sort by priority (High first), then name.
+        order = {"High": 0, "Medium": 1, "Low": 2}
+        return sorted(items, key=lambda w: (order.get(w.priority, 1), w.name.lower()))
+
+    def get_wishlist_item(self, item_id: str) -> WishlistItem:
+        return self.repo.wishlist_get(item_id)
+
+    def add_wishlist_item(self, **fields) -> WishlistItem:
+        item = WishlistItem.create(valid_categories=self.settings.categories, **fields)
+        return self.repo.wishlist_add(item)
+
+    def update_wishlist_item(self, item_id: str, **changes) -> WishlistItem:
+        existing = self.repo.wishlist_get(item_id)
+        merged = existing.to_dict()
+        if "est_value" in changes and changes["est_value"] is not None:
+            merged["est_value_cents"] = round(float(changes.pop("est_value")) * 100)
+        else:
+            changes.pop("est_value", None)
+        for key, val in changes.items():
+            if val is not None and key in merged:
+                merged[key] = val
+        updated = WishlistItem.create(
+            name=merged["name"],
+            category=merged["category"],
+            brand=merged["brand"],
+            est_value_cents=merged["est_value_cents"],
+            currency=merged["currency"],
+            priority=merged["priority"],
+            source_url=merged["source_url"],
+            notes=merged["notes"],
+            image_url=merged["image_url"],
+            valid_categories=self.settings.categories,
+        )
+        updated.id = existing.id
+        return self.repo.wishlist_update(updated)
+
+    def remove_wishlist_item(self, item_id: str) -> None:
+        self.repo.wishlist_delete(item_id)
+
+    def suggest_wishlist_image(self, item_id: str, *, overwrite: bool = False) -> WishlistItem:
+        item = self.repo.wishlist_get(item_id)
+        if item.image_url and not overwrite:
+            return item
+        url = images.suggest_image(item.brand, item.name)
+        if url:
+            item.image_url = url
+            self.repo.wishlist_update(item)
+        return item
+
+    def promote_wishlist_item(self, item_id: str, *, acquired: str = "",
+                              value: float | None = None) -> Item:
+        """Move a wishlist entry into the owned collection, then drop it."""
+        w = self.repo.wishlist_get(item_id)
+        item = self.add_item(
+            name=w.name,
+            category=w.category,
+            brand=w.brand,
+            acquired=acquired,
+            value_cents=(w.est_value_cents if value is None else round(value * 100)),
+            currency=w.currency,
+            notes=w.notes,
+            image_url=w.image_url,
+        )
+        self.repo.wishlist_delete(item_id)
+        return item
 
     # ---- settings -------------------------------------------------------------
 
