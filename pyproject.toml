@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "collect"
+version = "0.1.0"
+description = "CLI tool to manage a personal collection"
+requires-python = ">=3.10"
+
+[project.scripts]
+collect = "collect.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
