@@ -37,12 +37,12 @@
         <td class="right"><div class="money">{{ it.converted }}</div>
           {% if not it.same_currency %}<div class="tiny muted">{{ it.original }}</div>{% endif %}</td>
         <td class="right" style="white-space:nowrap">
-          <a class="btn sm ghost" href="{{ url_for('edit', item_id=it.id) }}">Edit</a>
+          <a class="btn sm ghost" href="{{ url_for('edit', item_id=it.id) }}" title="Edit this piece or change its photo">Edit</a>
           <form method="post" action="{{ url_for('remove', item_id=it.id) }}" style="display:inline;width:auto"
                 onsubmit="return confirm('Remove {{ it.name }}?')">
             <input type="hidden" name="csrf" value="{{ csrf_token }}">
             <input type="hidden" name="next" value="{{ request.full_path }}">
-            <button class="btn sm danger" type="submit">Remove</button>
+            <button class="btn sm danger" type="submit" title="Remove this piece from your collection">Remove</button>
           </form>
         </td>
       </tr>
@@ -79,24 +79,34 @@
       <form method="post" action="{{ url_for('category_rename') }}" style="display:flex;gap:6px;flex:1;width:auto">
         <input type="hidden" name="csrf" value="{{ csrf_token }}">
         <input type="hidden" name="old" value="{{ cat }}">
-        <input name="new" value="{{ cat }}">
-        <button class="btn sm ghost" type="submit">Save</button>
+        <input name="new" value="{{ cat }}" title="Edit the name, then Save to rename">
+        <button class="btn sm ghost" type="submit" title="Rename this category — its pieces move with it">Save</button>
       </form>
-      <span class="tiny muted" style="width:24px;text-align:right">{{ n }}</span>
+      <span class="tiny muted" style="width:24px;text-align:right" title="{{ n }} piece(s) in this category">{{ n }}</span>
       <form method="post" action="{{ url_for('category_remove') }}" style="width:auto"
             onsubmit="return confirm('Remove category {{ cat }}?{% if n %} {{ n }} item(s) keep the old label.{% endif %}')">
         <input type="hidden" name="csrf" value="{{ csrf_token }}">
         <input type="hidden" name="name" value="{{ cat }}">
         {% if n %}<input type="hidden" name="force" value="1">{% endif %}
-        <button class="btn sm danger" type="submit">✕</button>
+        <button class="btn sm danger" type="submit" title="Delete this category">✕</button>
       </form>
     </div>
     {% endfor %}
     <form method="post" action="{{ url_for('category_add') }}" style="margin-top:16px;display:flex;gap:8px">
       <input type="hidden" name="csrf" value="{{ csrf_token }}">
-      <input name="name" placeholder="New category" required>
-      <button class="btn" type="submit">Add</button>
+      <input name="name" placeholder="New category" required title="Name a new category, e.g. fountain pen">
+      <button class="btn" type="submit" title="Add this category">Add</button>
     </form>
   </div>
+</div>
+
+<div class="card" style="padding:18px 22px;margin-top:26px;border-color:#cda69e">
+  <h2 style="font-size:17px;margin:0 0 6px;color:var(--danger)">Clear all data</h2>
+  <p class="tiny muted" style="margin:0 0 12px">Permanently removes every piece and wishlist entry on this device. Handy before handing the app to someone else. This cannot be undone.</p>
+  <form method="post" action="{{ url_for('reset') }}"
+        onsubmit="return confirm('Delete ALL items and wishlist entries on this device? This cannot be undone.')">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <button class="btn danger" type="submit">Clear all data</button>
+  </form>
 </div>
 {% endblock %}

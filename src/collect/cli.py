@@ -66,6 +66,11 @@ def build_parser(categories: list[str]) -> argparse.ArgumentParser:
     p_cur = sub.add_parser("currency", help="Get or set the display currency")
     p_cur.add_argument("value", nargs="?", choices=["USD", "EUR", "INR"])
 
+    p_reset = sub.add_parser("reset", help="Delete all items and wishlist entries")
+    p_reset.add_argument("--yes", action="store_true", help="Skip the confirmation prompt")
+
+    p_sample = sub.add_parser("sample", help="Load sample data into an empty collection")
+
     p_wish = sub.add_parser("wishlist", help="Manage the wishlist")
     wish_sub = p_wish.add_subparsers(dest="wish_command", required=True)
     wish_sub.add_parser("list", help="List wishlist items")
@@ -196,6 +201,19 @@ def _dispatch(service: CollectionService, args: argparse.Namespace) -> None:
             print(f"Display currency set to {args.value}.")
         else:
             print(service.get_display_currency())
+
+    elif args.command == "reset":
+        if not args.yes:
+            print("This deletes ALL items and wishlist entries. "
+                  "Re-run with --yes to confirm.", file=sys.stderr)
+            sys.exit(1)
+        service.clear_all()
+        print("Cleared all data.")
+
+    elif args.command == "sample":
+        n = service.load_sample_data()
+        print(f"Loaded {n} sample piece(s)." if n
+              else "Collection isn't empty; no samples added.")
 
     elif args.command == "wishlist":
         _dispatch_wishlist(service, args)

@@ -11,4 +11,4 @@ pyinstaller --onefile --name collect --noconfirm --clean `
   --add-data "src/collect/web/templates;collect/web/templates" `
   tools/desktop_launcher.py
 
-Write-Host "`nBuilt dist\collect.exe — double-click it to launch the app." -ForegroundColor Green
+Write-Host "`nBuilt dist\collect.exe - double-click it to launch the app." -ForegroundColor Green

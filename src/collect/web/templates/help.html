@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}collect — guide{% endblock %}
+{% block head %}
+<style>
+  .guide h2{font-size:21px;margin:26px 0 8px}
+  .guide p,.guide li{font-size:16px}
+  .guide ul{margin:6px 0 0;padding-left:22px}
+  .guide .card{padding:18px 22px;margin-bottom:18px}
+  .kbd{font-family:var(--display);background:var(--gold-soft);border:1px solid #e0cda0;
+    border-radius:4px;padding:1px 8px;font-size:14px;color:#6b5012}
+</style>
+{% endblock %}
+{% block body %}
+<h1>How to use collect</h1>
+<p class="sub">A two-minute tour. Everything lives on this device — nothing leaves it.</p>
+<div class="rule"></div>
+
+<div class="guide">
+  <div class="card">
+    <h2 style="margin-top:0">The three tabs</h2>
+    <ul>
+      <li><b>My Collection</b> — a showcase of what you own: total value, a breakdown by category, and a picture for each piece. Click any piece to edit it.</li>
+      <li><b>Manage Collection</b> — the workbench. Add a piece with the form, search and filter the table, and <b>Edit</b> / <b>Remove</b> existing ones. The right-hand panel is where you rename, add, or remove <b>categories</b>.</li>
+      <li><b>Wishlist</b> — pieces you'd like to own. Each has a priority and an estimated price. Press <span class="kbd">Got it →</span> to move one into your collection once you acquire it.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Adding & editing a piece</h2>
+    <p>On <b>Manage Collection</b>, fill in the “Add a piece” form. Only a name and category are required. Leave the <b>Image URL</b> blank and collect will try to fetch a photo from the web automatically — if it picks the wrong one, open the piece and paste a correct image link to override it.</p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Money & currency</h2>
+    <p>Each piece remembers the currency you entered it in. The <span class="kbd">USD&nbsp;EUR&nbsp;INR</span> switch in the top-right converts <em>every</em> value on the page into that currency using live exchange rates (cached, so it still works offline).</p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Pictures</h2>
+    <p>Images are pulled from the web based on a piece's brand and name. It's best-effort, so a guess can be off — the manual image link on the edit screen always wins. On My Collection, a “Fetch missing images” button appears when some pieces still need one.</p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Starting fresh</h2>
+    <p>Your data lives in a folder in your home directory, separate from the app itself — so if you share the app with someone, they start empty. To wipe everything on this device and start over, use <b>Clear all data</b> at the bottom of the Manage tab.</p>
+  </div>
+
+  <p><a class="btn" href="{{ url_for('index') }}">Back to my collection</a></p>
+</div>
+{% endblock %}

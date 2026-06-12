@@ -73,6 +73,12 @@ pip install -e ".[package]"
 It reads/writes the same `~/.collect` data. Works fully offline (live FX rates
 and auto-image lookup just fall back when there's no internet).
 
+**Sharing it:** the executable contains no data — each user's collection lives in
+their own `~/.collect`. So when you hand `collect.exe` to someone, they start with
+a clean, empty collection and a first-run welcome (with an optional "load sample
+data" button and a built-in guide at `/help`). To wipe this device before sharing,
+use "Clear all data" on the Manage tab, or run `collect reset --yes`.
+
 ### Use it from your phone (same Wi-Fi)
 
 Run the app bound to your network, then browse to your computer's IP from the

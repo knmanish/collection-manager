@@ -63,6 +63,7 @@ def create_app(service: CollectionService | None = None) -> Flask:
             "supported_currencies": SUPPORTED_CURRENCIES,
             "priorities": PRIORITIES,
             "display_currency": svc.get_display_currency(),
+            "show_welcome": not svc.is_onboarded(),
         }
 
     def csrf_check():
@@ -316,6 +317,35 @@ def create_app(service: CollectionService | None = None) -> Flask:
     def set_currency():
         _run(lambda: svc.set_display_currency(request.form.get("currency", "")), None)
         return redirect(request.form.get("next") or url_for("index"))
+
+    # ---- onboarding / help ----------------------------------------------------
+
+    @app.route("/help")
+    def help_page():
+        return render_template("help.html")
+
+    @app.route("/onboard/dismiss", methods=["POST"])
+    @csrf_protect
+    def onboard_dismiss():
+        svc.mark_onboarded(True)
+        return redirect(request.form.get("next") or url_for("index"))
+
+    @app.route("/samples", methods=["POST"])
+    @csrf_protect
+    def load_samples():
+        n = svc.load_sample_data()
+        svc.mark_onboarded(True)
+        flash(f"Loaded {n} sample piece(s) to explore. Clear them anytime "
+              "from the Manage tab." if n else
+              "Sample data is only added to an empty collection.", "success")
+        return redirect(url_for("index"))
+
+    @app.route("/reset", methods=["POST"])
+    @csrf_protect
+    def reset():
+        svc.clear_all()
+        flash("All items and wishlist entries removed.", "success")
+        return redirect(url_for("index"))
 
     def _run(action, success_msg):
         try:

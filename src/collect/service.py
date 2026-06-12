@@ -241,3 +241,52 @@ class CollectionService:
             raise ValidationError(f"Currency must be one of: {allowed}")
         self.settings.display_currency = currency
         self.settings.save()
+
+    # ---- onboarding / housekeeping --------------------------------------------
+
+    def is_onboarded(self) -> bool:
+        return self.settings.onboarded
+
+    def mark_onboarded(self, value: bool = True) -> None:
+        self.settings.onboarded = value
+        self.settings.save()
+
+    def is_empty(self) -> bool:
+        return not self.repo.all() and not self.repo.wishlist_all()
+
+    def clear_all(self) -> None:
+        """Wipe every item and wishlist entry. Irreversible."""
+        for item in self.repo.all():
+            self.repo.delete(item.id)
+        for w in self.repo.wishlist_all():
+            self.repo.wishlist_delete(w.id)
+
+    def load_sample_data(self) -> int:
+        """Populate a few illustrative pieces so a newcomer can explore.
+
+        Only acts on an empty collection so it never mixes with real data.
+        Returns the number of items added (0 if the collection wasn't empty).
+        """
+        if self.repo.all():
+            return 0
+        samples = [
+            dict(name="Speedmaster Professional", category="watch", brand="Omega",
+                 acquired="2021-07-20", value=6500, currency="USD",
+                 notes="The moonwatch — sample item"),
+            dict(name="Model 1953 Diver", category="watch", brand="Seiko",
+                 acquired="2019-03-10", value=420, currency="USD",
+                 notes="Sample item"),
+            dict(name="149 Meisterstück", category="pen", brand="Montblanc",
+                 acquired="2020-12-01", value=900, currency="EUR",
+                 notes="Sample fountain pen"),
+            dict(name="Bugout", category="knife", brand="Benchmade",
+                 acquired="2022-05-15", value=180, currency="USD",
+                 notes="Sample EDC knife"),
+        ]
+        for s in samples:
+            self.add_item(**s)
+        self.add_wishlist_item(
+            name="Submariner Date", category="watch", brand="Rolex",
+            est_value=12000, currency="USD", priority="High",
+            notes="Sample wishlist entry")
+        return len(samples)

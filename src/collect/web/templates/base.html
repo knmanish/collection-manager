@@ -75,6 +75,22 @@
       background:var(--gold-soft);color:#6b5012;border:1px solid #e0cda0}
     .right{text-align:right}.muted{color:var(--muted)}.tiny{font-size:13px}
     .money{font-family:var(--display);font-weight:600}
+    .help-dot{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;
+      border-radius:50%;border:1px solid var(--gold);color:var(--gold);font-family:var(--display);
+      font-size:14px;text-decoration:none}
+    .help-dot:hover{background:var(--gold);color:#2a1d06;text-decoration:none}
+    .welcome{background:var(--surface);border:1px solid var(--gold);border-left:4px solid var(--gold);
+      border-radius:var(--radius);padding:20px 24px;margin-bottom:22px}
+    .welcome h2{margin:0 0 6px;font-size:21px}
+    .welcome .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:14px 0 18px}
+    .welcome .step{font-size:15px}
+    .welcome .step b{font-family:var(--display)}
+    .welcome .acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    /* native title tooltips are used widely; this styles the nav help affordance */
+    [data-tip]{position:relative}
+    [data-tip]:hover::after{content:attr(data-tip);position:absolute;top:130%;right:0;
+      background:var(--txt);color:var(--surface);font-family:var(--serif);font-size:13px;
+      padding:6px 10px;border-radius:6px;white-space:nowrap;z-index:30}
   </style>
   {% block head %}{% endblock %}
 </head>
@@ -86,19 +102,45 @@
       <a class="link {{ 'active' if request.endpoint in ['manage','edit'] }}" href="{{ url_for('manage') }}">Manage Collection</a>
       <a class="link {{ 'active' if request.endpoint and request.endpoint.startswith('wishlist') }}" href="{{ url_for('wishlist') }}">Wishlist</a>
       <div class="spacer"></div>
-      <form method="post" action="{{ url_for('set_currency') }}" class="seg">
+      <form method="post" action="{{ url_for('set_currency') }}" class="seg"
+            data-tip="Show all values in this currency (live rates)" title="Show all values in this currency (live rates)">
         <input type="hidden" name="csrf" value="{{ csrf_token }}">
         <input type="hidden" name="next" value="{{ request.full_path }}">
         {% for c in supported_currencies %}
         <button name="currency" value="{{ c }}" class="{{ 'on' if c == display_currency }}">{{ c }}</button>
         {% endfor %}
       </form>
+      <a class="help-dot" href="{{ url_for('help_page') }}" data-tip="How to use collect" title="How to use collect" aria-label="Help">?</a>
     </div>
   </nav>
   <div class="wrap">
     {% with msgs = get_flashed_messages(with_categories=true) %}
       {% for cat, msg in msgs %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}
     {% endwith %}
+    {% if show_welcome %}
+    <div class="welcome">
+      <h2>Welcome to collect</h2>
+      <p class="muted" style="margin:0">Your private cabinet for watches, pens, knives — anything worth keeping. Everything is stored locally on this device; nothing is uploaded.</p>
+      <div class="steps">
+        <div class="step"><b>My Collection</b> — a visual showcase of what you own, with totals by category.</div>
+        <div class="step"><b>Manage Collection</b> — add, edit and remove pieces, and rename your categories.</div>
+        <div class="step"><b>Wishlist</b> — track pieces you're after; tap “Got it →” when you acquire one.</div>
+      </div>
+      <div class="acts">
+        <a class="btn" href="{{ url_for('manage') }}">Add my first piece</a>
+        <form method="post" action="{{ url_for('load_samples') }}" style="width:auto">
+          <input type="hidden" name="csrf" value="{{ csrf_token }}">
+          <button class="btn ghost" type="submit">Load sample data to explore</button>
+        </form>
+        <form method="post" action="{{ url_for('onboard_dismiss') }}" style="width:auto">
+          <input type="hidden" name="csrf" value="{{ csrf_token }}">
+          <input type="hidden" name="next" value="{{ request.full_path }}">
+          <button class="btn ghost" type="submit">Start with a blank slate</button>
+        </form>
+        <a href="{{ url_for('help_page') }}" style="margin-left:4px">Full guide →</a>
+      </div>
+    </div>
+    {% endif %}
     {% block body %}{% endblock %}
   </div>
 </body>

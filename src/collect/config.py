@@ -45,6 +45,7 @@ def rates_path() -> Path:
 class Settings:
     categories: list[str] = field(default_factory=lambda: list(DEFAULT_CATEGORIES))
     display_currency: str = DEFAULT_CURRENCY
+    onboarded: bool = False  # has the user dismissed the first-run welcome?
 
     @classmethod
     def load(cls) -> "Settings":
@@ -58,6 +59,7 @@ class Settings:
         return cls(
             categories=data.get("categories", list(DEFAULT_CATEGORIES)),
             display_currency=data.get("display_currency", DEFAULT_CURRENCY),
+            onboarded=data.get("onboarded", False),
         )
 
     def save(self) -> None:
@@ -65,6 +67,7 @@ class Settings:
         payload = {
             "categories": self.categories,
             "display_currency": self.display_currency,
+            "onboarded": self.onboarded,
         }
         _atomic_write(path, json.dumps(payload, indent=2))
 
