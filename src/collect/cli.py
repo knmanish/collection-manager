@@ -1,5 +1,6 @@
 import argparse
 import sys
+from typing import Any
 
 from . import commands
 
@@ -35,13 +36,27 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _print_table(items: list[dict[str, Any]]) -> None:
+    if not items:
+        print("No items found.")
+        return
+    cols = ["name", "category", "brand", "acquired", "value", "notes"]
+    widths = {c: max(len(c), *(len(str(i.get(c, ""))) for i in items)) for c in cols}
+    header = "  ".join(c.upper().ljust(widths[c]) for c in cols)
+    print(header)
+    print("-" * len(header))
+    for item in items:
+        row = "  ".join(str(item.get(c, "")).ljust(widths[c]) for c in cols)
+        print(row)
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
 
     try:
         if args.command == "add":
-            commands.add(
+            item = commands.add_item(
                 name=args.name,
                 category=args.category,
                 brand=args.brand,
@@ -49,12 +64,21 @@ def main() -> None:
                 value=args.value,
                 notes=args.notes,
             )
+            print(f"Added: {item['name']} ({item['category']})")
         elif args.command == "list":
-            commands.list_items(category=getattr(args, "category", None))
+            _print_table(commands.list_items(category=getattr(args, "category", None)))
         elif args.command == "remove":
-            commands.remove(args.name)
+            removed = commands.remove_item(args.name)
+            if removed:
+                print(f"Removed: {args.name}")
+            else:
+                print(f"No item named '{args.name}' found.")
         elif args.command == "search":
-            commands.search(args.query)
+            results = commands.search_items(args.query)
+            if not results:
+                print(f"No items matching '{args.query}'.")
+            else:
+                _print_table(results)
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

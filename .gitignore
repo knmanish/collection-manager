@@ -8,3 +8,7 @@ venv/
 .env
 *.json
 !collection.json
+
+# runtime logs
+web.log
+web.err
