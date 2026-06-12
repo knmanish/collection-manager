@@ -11,9 +11,13 @@ dependencies = [
     "flask>=3.0",
 ]
 
+[project.optional-dependencies]
+package = ["pyinstaller>=6.0"]
+
 [project.scripts]
 collect = "collect.cli:main"
 collect-web = "collect.web.app:main"
+collect-app = "collect.desktop:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -60,6 +60,32 @@ the header converts all displayed values live.
 
 Set `COLLECT_DEBUG=1` to run Flask in debug mode (off by default).
 
+## Standalone desktop app
+
+Build a single double-click executable (no Python needed to run it):
+
+```powershell
+pip install -e ".[package]"
+.\build-desktop.ps1            # produces dist\collect.exe (~12 MB)
+```
+
+`dist\collect.exe` starts the local server and opens your browser automatically.
+It reads/writes the same `~/.collect` data. Works fully offline (live FX rates
+and auto-image lookup just fall back when there's no internet).
+
+### Use it from your phone (same Wi-Fi)
+
+Run the app bound to your network, then browse to your computer's IP from the
+phone — no hosting required, while your computer is on:
+
+```powershell
+$env:COLLECT_HOST="0.0.0.0"; collect-app      # or collect-web
+# then on the phone: http://<your-computer-ip>:5000
+```
+
+`COLLECT_HOST` (default `127.0.0.1`) and `COLLECT_PORT` (default `5000`) control
+the bind address and port.
+
 ## Architecture
 
 Layered so each concern can change independently:

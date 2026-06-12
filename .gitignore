@@ -12,3 +12,8 @@ venv/
 # runtime logs
 web.log
 web.err
+exe.log
+exe.err
+
+# PyInstaller
+*.spec

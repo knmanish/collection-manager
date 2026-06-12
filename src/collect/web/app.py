@@ -10,7 +10,9 @@ Wishlist (``/wishlist``).
 
 from __future__ import annotations
 
+import os
 import secrets
+import sys
 from functools import wraps
 
 from flask import (
@@ -33,8 +35,17 @@ def _secret_key() -> str:
     return key
 
 
+def _template_folder() -> str | None:
+    """When bundled by PyInstaller, templates live under the unpack dir
+    (``sys._MEIPASS``) rather than next to this module."""
+    if getattr(sys, "frozen", False):
+        return os.path.join(sys._MEIPASS, "collect", "web", "templates")
+    return None  # default: package-relative "templates"
+
+
 def create_app(service: CollectionService | None = None) -> Flask:
-    app = Flask(__name__)
+    tf = _template_folder()
+    app = Flask(__name__, template_folder=tf) if tf else Flask(__name__)
     app.secret_key = _secret_key()
     svc = service or CollectionService()
 
@@ -318,9 +329,10 @@ def create_app(service: CollectionService | None = None) -> Flask:
 
 
 def main() -> None:
-    import os
     app = create_app()
-    app.run(host="127.0.0.1", port=5000, debug=os.environ.get("COLLECT_DEBUG") == "1")
+    host = os.environ.get("COLLECT_HOST", "127.0.0.1")
+    port = int(os.environ.get("COLLECT_PORT", "5000"))
+    app.run(host=host, port=port, debug=os.environ.get("COLLECT_DEBUG") == "1")
 
 
 if __name__ == "__main__":
